@@ -26,17 +26,9 @@ module.exports = function(grunt) {
         files: ['gruntfile.js', 'src/*.js', 'tests/*.js'],
         tasks: ['default']
       }
-    },
-    mocha: {
-      spawn: {
-        src: ['tests/index.html'],
-        options: {
-          run: true
-        }
-      }
     }
   });
 
-  grunt.registerTask('default', ['clean', 'jshint', 'mocha']);
+  grunt.registerTask('default', ['clean', 'jshint']);
   grunt.registerTask('dist', ['default', 'uglify']);
 };
