@@ -1,0 +1,31 @@
+{
+  "name": "spawn",
+  "version": "0.1.0",
+  "repository": "kevinjamesus86/spawn",
+  "description": "sane, flexible threading for browsers",
+  "author": "Kevin James <kevinjamesus86@gmail.com>",
+  "keywords": [
+    "async",
+    "spawn",
+    "spawn.js",
+    "thread",
+    "threads",
+    "threading",
+    "multithread",
+    "multithreading",
+    "worker",
+    "webworker",
+    "webworkers"
+  ],
+  "license": "MIT",
+  "devDependencies": {
+    "chai": "^2.3.0",
+    "grunt": "^0.4.5",
+    "grunt-contrib-clean": "^0.6.0",
+    "grunt-contrib-jshint": "^0.11.2",
+    "grunt-contrib-uglify": "^0.9.1",
+    "grunt-contrib-watch": "^0.6.1",
+    "grunt-mocha": "^0.4.12",
+    "mocha": "^2.2.5"
+  }
+}
