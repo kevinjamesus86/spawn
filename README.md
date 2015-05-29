@@ -10,9 +10,9 @@ _flexible, event-driven web workers for modern browsers_
 ## Install
 
 ```html
-<script src="https://cdn.rawgit.com/kevinjamesus86/spawn/v0.1.0/dist/spawn.js"></script>
+<script src="https://cdn.rawgit.com/kevinjamesus86/spawn/v0.1.1/dist/spawn.js"></script>
 or
-<script src="https://cdn.rawgit.com/kevinjamesus86/spawn/v0.1.0/dist/spawn.min.js"></script>
+<script src="https://cdn.rawgit.com/kevinjamesus86/spawn/v0.1.1/dist/spawn.min.js"></script>
 ```
 
 ## Usage
@@ -48,4 +48,7 @@ worker.emit('big fib', 42, function(result) {
   // the *async* result of our workers labor
   console.log('the fib of 42 is:', result);
 });
+
+// close if/when you're done with it
+worker.close();
 ```
