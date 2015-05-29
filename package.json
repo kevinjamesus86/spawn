@@ -2,7 +2,7 @@
   "name": "spawn",
   "version": "0.1.0",
   "repository": "kevinjamesus86/spawn",
-  "description": "sane, flexible threading for modern browsers",
+  "description": "flexible, event-driven web workers for modern browsers",
   "author": "Kevin James <kevinjamesus86@gmail.com>",
   "keywords": [
     "async",

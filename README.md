@@ -1,5 +1,5 @@
 # spawn [![Codacy Badge](https://www.codacy.com/project/badge/4a6d5150e5834dcf94bc08177422e14e)](https://www.codacy.com/app/kevinjamesus86/spawn)
-_sane, evented, flexible threading for modern browsers_
+_flexible, event-driven web workers for modern browsers_
 
 ### Download
 
