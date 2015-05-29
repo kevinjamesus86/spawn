@@ -59,7 +59,7 @@
 
     // import the worker src if src was a string
     if (src) {
-      this.import(src);
+      this.importScripts(src);
     }
   }
 
@@ -78,7 +78,7 @@
    * `blob:http://srv/06af73c7-df3e-4c78-867e-937f829949c7`
    * which breaks relative path calls to importScripts
    *
-   * Using spawn's utility method `import` prefixes relative
+   * Using spawn's utility method `importScripts` prefixes relative
    * script paths with the main threads href, solving this problem
    */
   Spawn.prototype.location = (function() {
@@ -200,7 +200,8 @@
    * @param {...string} var_args - scripts to import
    * @return {Spawn}
    */
-  Spawn.prototype.import = function() {
+  Spawn.prototype['import'] =
+  Spawn.prototype.importScripts = function() {
     var args = Array.prototype.slice.call(arguments, 0);
 
     if (this.isMainThread) {
@@ -246,7 +247,7 @@
           delete self.acks[id];
           break;
         case 'spawn_import':
-          self.import.apply(self, data);
+          self.importScripts.apply(self, data);
           break;
         case 'spawn_close':
           self.close();

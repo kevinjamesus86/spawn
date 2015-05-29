@@ -58,7 +58,7 @@ describe('spawn', function() {
       });
     });
 
-    worker.import('base/test/import.x2.js');
+    worker.importScripts('base/test/import.x2.js');
 
     worker.emit('x2', 10, function(val) {
       expect(val).toBe(20);
@@ -269,7 +269,7 @@ describe('worker', function() {
 
   it('imports file contents into the DedicatedWorkerGlobalScope', function(done) {
     createWorker(function() {
-      spawn.import('base/test/import.x2.js');
+      spawn.importScripts('base/test/import.x2.js');
 
       spawn.on('x2', function(val, responder) {
         responder(x2(val));
