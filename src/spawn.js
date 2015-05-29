@@ -1,3 +1,10 @@
+/**
+ * sane, flexible threading for modern browsers
+ * @version v0.1.0 - 2015-05-29
+ * @author Kevin James <kevinjamesus86@gmail.com>
+ * Copyright (c) 2015 Kevin James <kevinjamesus86@gmail.com>
+ * Licensed under the MIT license.
+ */
 (function(root, factory) {
 
   // universal module definition
