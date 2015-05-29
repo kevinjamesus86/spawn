@@ -33,14 +33,6 @@
   var noop = function() {};
 
   /**
-   * Creates a relatively safe UUID
-   * @return {string}
-   */
-  var uuid = function() {
-    return 'spawn_' + Date.now().toString(32) + Math.random().toString(32);
-  };
-
-  /**
    * @param {(string|Function)} src - worker source
    * @constructor
    */
@@ -70,6 +62,15 @@
       this.import(src);
     }
   }
+
+  /**
+   * Creates a relatively safe UUID
+   * @return {string}
+   */
+  Spawn.prototype.uuid = function() {
+    var prefix = this.isMainThread ? 'spawn_' : 'worker_';
+    return prefix + Date.now().toString(32) + Math.random().toString(32);
+  };
 
   /**
    * Main thread location information that is shared with
@@ -128,7 +129,7 @@
     } else if ('string' === typeof ackCallback) {
       id = ackCallback;
     }
-    id = id || uuid();
+    id = id || this.uuid();
     if ('function' === typeof ackCallback) {
       this.acks[id] = ackCallback;
       ack = true;
@@ -289,9 +290,6 @@
     return function() {
       return [
         'self.spawn = (function() {',
-          'function uuid() {',
-            'return \'worker_\' + Date.now().toString(32) + Math.random().toString(32);',
-          '}',
           'function Spawn() {',
             'this.isWorker = true;',
             'this.worker = self;',
