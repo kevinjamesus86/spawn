@@ -81,15 +81,11 @@
    * Using spawn's utility method `importScripts` prefixes relative
    * script paths with the main threads href, solving this problem
    */
-  Spawn.prototype.location = (function() {
-    var href = location.href.match(/^(.*\/)?(?:$|(.+?)(?:(\.[^.]*$)|$))/)[1].
-      replace(/\/?$/, '') + '/';
-
-    return {
-      originPath: href,
-      origin: location.origin
-    };
-  })();
+  Spawn.prototype.location = {
+    origin: location.origin,
+    originPath: location.href.match(/^(.*\/)?(?:$|(.+?)(?:(\.[^.]*$)|$))/)[1].
+      replace(/\/?$/, '') + '/'
+  };
 
   /**
    * Add an event listener for a given event
