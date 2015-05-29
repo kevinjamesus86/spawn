@@ -276,16 +276,14 @@
     // can be used in the worker source code
     var spawnPrototypeSource = Object.keys(Spawn.fn).
       reduce(function(src, fn) {
-        return src + 'Spawn.fn.' + fn + '=' + stringify(Spawn.fn[fn]) + ';';
+        var val = Spawn.fn[fn];
+        if ('function' === typeof val) {
+          val = val.toString();
+        } else {
+          val = JSON.stringify(val);
+        }
+        return src + 'Spawn.fn.' + fn + '=' + val + ';';
       }, '');
-
-    function stringify(val) {
-      if ('function' === typeof val) {
-        return val.toString();
-      } else {
-        return JSON.stringify(val);
-      }
-    }
 
     return function() {
       return [
