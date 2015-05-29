@@ -114,14 +114,17 @@
    * @return {Spawn}
    */
   Spawn.prototype.emit = function(event, data, ackCallback, /* @private */ id) {
+    var ack = false;
     id = id || uuid();
     if ('function' === typeof ackCallback) {
       this.acks[id] = ackCallback;
+      ack = true;
     }
     this.worker.postMessage({
       id: id,
       event: event,
-      data: data
+      data: data,
+      ack: ack
     });
     return this;
   };
@@ -133,9 +136,10 @@
    * @param {string} event
    * @param {*} data
    * @param {number} id
+   * @param {boolean} ack
    * @api private
    */
-  Spawn.prototype._invoke = function(event, data, id) {
+  Spawn.prototype._invoke = function(event, data, id, ack) {
     var fns = this.callbacks[event];
     var self = this;
 
@@ -147,10 +151,12 @@
       }
     }
 
-    // If the responder is invoked it means we must
-    // respond to an ackCallback that was passed to #on
+    // If the responder is invoked and the event can be acknowledged
+    // then we must notify the emitter, passing on the data provided
     function responder(data) {
-      self.emit('spawn_ack', data, null, id);
+      if (ack) {
+        self.emit('spawn_ack', data, null, id);
+      }
     }
   };
 
@@ -222,10 +228,8 @@
 
       switch (event) {
         case 'spawn_ack':
-          if (id in self.acks) {
-            self.acks[id](data);
-            delete self.acks[id];
-          }
+          self.acks[id](data);
+          delete self.acks[id];
           break;
         case 'spawn_import':
           self.import.apply(self, data);
@@ -234,7 +238,7 @@
           self.close();
           break;
         default:
-          self._invoke(event, data, id, ack);
+          self._invoke(event, data, id, e.data.ack);
       }
     };
 
