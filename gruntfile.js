@@ -3,7 +3,6 @@ module.exports = function(grunt) {
   grunt.loadNpmTasks('grunt-contrib-jshint');
   grunt.loadNpmTasks('grunt-contrib-uglify');
   grunt.loadNpmTasks('grunt-contrib-watch');
-  grunt.loadNpmTasks('grunt-mocha');
 
   grunt.initConfig({
     clean: {
@@ -23,12 +22,12 @@ module.exports = function(grunt) {
     },
     watch: {
       spawn: {
-        files: ['gruntfile.js', 'src/*.js', 'test/*.js'],
+        files: ['gruntfile.js', 'src/*.js'],
         tasks: ['default']
       }
     }
   });
 
-  grunt.registerTask('default', ['clean', 'jshint']);
-  grunt.registerTask('dist', ['default', 'uglify']);
+  grunt.registerTask('default', ['jshint']);
+  grunt.registerTask('dist', ['clean', 'jshint', 'uglify']);
 };
