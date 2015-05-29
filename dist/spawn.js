@@ -2,7 +2,7 @@
  * sane, flexible threading for modern browsers
  * @version v0.1.0 - 2015-05-29
  * @author Kevin James <kevinjamesus86@gmail.com>
- * Copyright (c) 2015 Kevin James <kevinjamesus86@gmail.com>
+ * Copyright (c) 2015 Kevin James
  * Licensed under the MIT license.
  */
 (function(root, factory) {
@@ -33,14 +33,6 @@
   var noop = function() {};
 
   /**
-   * Creates a relatively safe UUID
-   * @return {string}
-   */
-  var uuid = function() {
-    return 'spawn_' + Date.now().toString(32) + Math.random().toString(32);
-  };
-
-  /**
    * @param {(string|Function)} src - worker source
    * @constructor
    */
@@ -67,9 +59,21 @@
 
     // import the worker src if src was a string
     if (src) {
-      this.import(src);
+      this.importScripts(src);
     }
   }
+
+  // mins a little better
+  Spawn.fn = Spawn.prototype;
+
+  /**
+   * Creates a relatively safe UUID
+   * @return {string}
+   */
+  Spawn.fn.uuid = function() {
+    var prefix = this.isMainThread ? 'spawn_' : 'worker_';
+    return prefix + Date.now().toString(32) + Math.random().toString(32);
+  };
 
   /**
    * Main thread location information that is shared with
@@ -77,18 +81,14 @@
    * `blob:http://srv/06af73c7-df3e-4c78-867e-937f829949c7`
    * which breaks relative path calls to importScripts
    *
-   * Using spawn's utility method `import` prefixes relative
+   * Using spawn's utility method `importScripts` prefixes relative
    * script paths with the main threads href, solving this problem
    */
-  Spawn.prototype.location = (function() {
-    var href = location.href.match(/^(.*\/)?(?:$|(.+?)(?:(\.[^.]*$)|$))/)[1].
-      replace(/\/?$/, '') + '/';
-
-    return {
-      originPath: href,
-      origin: location.origin
-    };
-  })();
+  Spawn.fn.location = {
+    origin: location.origin,
+    originPath: location.href.match(/^(.*\/)?(?:$|(.+?)(?:(\.[^.]*$)|$))/)[1].
+      replace(/\/?$/, '') + '/'
+  };
 
   /**
    * Add an event listener for a given event
@@ -97,7 +97,7 @@
    * @param {Function} handler
    * @return {Spawn}
    */
-  Spawn.prototype.on = function(event, handler) {
+  Spawn.fn.on = function(event, handler) {
     if ('object' === typeof event) {
       for (var e in event) {
         if (Object.prototype.hasOwnProperty.call(event, e)) {
@@ -120,7 +120,7 @@
    * @param {Function=} ackCallback
    * @return {Spawn}
    */
-  Spawn.prototype.emit = function(event, data, ackCallback, /* @private */ id) {
+  Spawn.fn.emit = function(event, data, ackCallback, /* @private */ id) {
     var ack = false;
     if ('function' === typeof data) {
       ackCallback = data;
@@ -128,7 +128,7 @@
     } else if ('string' === typeof ackCallback) {
       id = ackCallback;
     }
-    id = id || uuid();
+    id = id || this.uuid();
     if ('function' === typeof ackCallback) {
       this.acks[id] = ackCallback;
       ack = true;
@@ -152,7 +152,7 @@
    * @param {boolean} ack
    * @api private
    */
-  Spawn.prototype._invoke = function(event, data, id, ack) {
+  Spawn.fn._invoke = function(event, data, id, ack) {
     var fns = this.callbacks[event];
     var self = this;
 
@@ -179,7 +179,7 @@
    *
    * @return {Spawn}
    */
-  Spawn.prototype.close = function() {
+  Spawn.fn.close = function() {
     if (this.isWorker) {
       this.emit('spawn_close');
       this.worker.close();
@@ -199,7 +199,8 @@
    * @param {...string} var_args - scripts to import
    * @return {Spawn}
    */
-  Spawn.prototype.import = function() {
+  Spawn.fn['import'] =
+  Spawn.fn.importScripts = function() {
     var args = Array.prototype.slice.call(arguments, 0);
 
     if (this.isMainThread) {
@@ -228,7 +229,7 @@
    * Initialize Spawn
    * @api private
    */
-  Spawn.prototype._init = function() {
+  Spawn.fn._init = function() {
     var self = this;
 
     self.acks = {};
@@ -245,7 +246,7 @@
           delete self.acks[id];
           break;
         case 'spawn_import':
-          self.import.apply(self, data);
+          self.importScripts.apply(self, data);
           break;
         case 'spawn_close':
           self.close();
@@ -273,30 +274,26 @@
 
     // Stringify Spawn's prototype so it
     // can be used in the worker source code
-    var spawnPrototypeSource = Object.keys(Spawn.prototype).
+    var spawnPrototypeSource = Object.keys(Spawn.fn).
       reduce(function(src, fn) {
-        return src + 'Spawn.prototype.' + fn + '=' + stringify(Spawn.prototype[fn]) + ';';
+        var val = Spawn.fn[fn];
+        if ('function' === typeof val) {
+          val = val.toString();
+        } else {
+          val = JSON.stringify(val);
+        }
+        return src + 'Spawn.fn.' + fn + '=' + val + ';';
       }, '');
-
-    function stringify(val) {
-      if ('function' === typeof val) {
-        return val.toString();
-      } else {
-        return JSON.stringify(val);
-      }
-    }
 
     return function() {
       return [
         'self.spawn = (function() {',
-          'function uuid() {',
-            'return \'worker_\' + Date.now().toString(32) + Math.random().toString(32);',
-          '}',
           'function Spawn() {',
             'this.isWorker = true;',
             'this.worker = self;',
             'this._init();',
           '}',
+          'Spawn.fn=Spawn.prototype;',
           spawnPrototypeSource,
           'return new Spawn;',
         '})();'
@@ -304,9 +301,6 @@
     };
   })();
 
-  /**
-   * @param {(string|Function)} src
-   */
   return function spawn(src) {
     return new Spawn(src);
   };
