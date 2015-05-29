@@ -303,9 +303,6 @@
     };
   })();
 
-  /**
-   * @param {(string|Function)} src
-   */
   return function spawn(src) {
     return new Spawn(src);
   };
