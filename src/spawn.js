@@ -49,7 +49,13 @@
       src = null;
     }
 
-    this.worker = createWorker(fn);
+    this.file = URL.createObjectURL(new Blob([
+      generateSpawnWorkerSource() + '(' + fn.toString() + ').call(self);'
+    ], {
+      type: 'text/javascript'
+    }));
+
+    this.worker = new Worker(this.file);
     this._init();
 
     // import the worker src if src was a string
@@ -163,6 +169,7 @@
     this.acks = {};
     this.callbacks = {};
     this.worker.onerror = this.worker.onmessage = null;
+    URL.revokeObjectURL(this.file);
     return this;
   };
 
@@ -232,21 +239,6 @@
       };
     }
   };
-
-  /**
-   * Creates a worker with the source of `fn`
-   * @param {Function} fn
-   */
-  function createWorker(fn) {
-    var file = URL.createObjectURL(new Blob([
-      generateSpawnWorkerSource() + '(' + fn.toString() + ').call(self);'
-    ], {
-      type: 'text/javascript'
-    }));
-    var worker = new Worker(file);
-    URL.revokeObjectURL(file);
-    return worker;
-  }
 
   /**
    * Generate Spawn worker source code from .. Spawn
