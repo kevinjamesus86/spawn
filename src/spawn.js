@@ -109,12 +109,18 @@
    * provided it will be called with the value passed to a listeners responder
    *
    * @param {string} event
-   * @param {*} data
+   * @param {*=} data
    * @param {Function=} ackCallback
    * @return {Spawn}
    */
   Spawn.prototype.emit = function(event, data, ackCallback, /* @private */ id) {
     var ack = false;
+    if ('function' === typeof data) {
+      ackCallback = data;
+      data = null;
+    } else if ('string' === typeof ackCallback) {
+      id = ackCallback;
+    }
     id = id || uuid();
     if ('function' === typeof ackCallback) {
       this.acks[id] = ackCallback;
@@ -155,7 +161,7 @@
     // then we must notify the emitter, passing on the data provided
     function responder(data) {
       if (ack) {
-        self.emit('spawn_ack', data, null, id);
+        self.emit('spawn_ack', data, id);
       }
     }
   };
