@@ -63,11 +63,14 @@
     }
   }
 
+  // mins a little better
+  Spawn.fn = Spawn.prototype;
+
   /**
    * Creates a relatively safe UUID
    * @return {string}
    */
-  Spawn.prototype.uuid = function() {
+  Spawn.fn.uuid = function() {
     var prefix = this.isMainThread ? 'spawn_' : 'worker_';
     return prefix + Date.now().toString(32) + Math.random().toString(32);
   };
@@ -81,7 +84,7 @@
    * Using spawn's utility method `importScripts` prefixes relative
    * script paths with the main threads href, solving this problem
    */
-  Spawn.prototype.location = {
+  Spawn.fn.location = {
     origin: location.origin,
     originPath: location.href.match(/^(.*\/)?(?:$|(.+?)(?:(\.[^.]*$)|$))/)[1].
       replace(/\/?$/, '') + '/'
@@ -94,7 +97,7 @@
    * @param {Function} handler
    * @return {Spawn}
    */
-  Spawn.prototype.on = function(event, handler) {
+  Spawn.fn.on = function(event, handler) {
     if ('object' === typeof event) {
       for (var e in event) {
         if (Object.prototype.hasOwnProperty.call(event, e)) {
@@ -117,7 +120,7 @@
    * @param {Function=} ackCallback
    * @return {Spawn}
    */
-  Spawn.prototype.emit = function(event, data, ackCallback, /* @private */ id) {
+  Spawn.fn.emit = function(event, data, ackCallback, /* @private */ id) {
     var ack = false;
     if ('function' === typeof data) {
       ackCallback = data;
@@ -149,7 +152,7 @@
    * @param {boolean} ack
    * @api private
    */
-  Spawn.prototype._invoke = function(event, data, id, ack) {
+  Spawn.fn._invoke = function(event, data, id, ack) {
     var fns = this.callbacks[event];
     var self = this;
 
@@ -176,7 +179,7 @@
    *
    * @return {Spawn}
    */
-  Spawn.prototype.close = function() {
+  Spawn.fn.close = function() {
     if (this.isWorker) {
       this.emit('spawn_close');
       this.worker.close();
@@ -196,8 +199,8 @@
    * @param {...string} var_args - scripts to import
    * @return {Spawn}
    */
-  Spawn.prototype['import'] =
-  Spawn.prototype.importScripts = function() {
+  Spawn.fn['import'] =
+  Spawn.fn.importScripts = function() {
     var args = Array.prototype.slice.call(arguments, 0);
 
     if (this.isMainThread) {
@@ -226,7 +229,7 @@
    * Initialize Spawn
    * @api private
    */
-  Spawn.prototype._init = function() {
+  Spawn.fn._init = function() {
     var self = this;
 
     self.acks = {};
@@ -271,9 +274,9 @@
 
     // Stringify Spawn's prototype so it
     // can be used in the worker source code
-    var spawnPrototypeSource = Object.keys(Spawn.prototype).
+    var spawnPrototypeSource = Object.keys(Spawn.fn).
       reduce(function(src, fn) {
-        return src + 'Spawn.prototype.' + fn + '=' + stringify(Spawn.prototype[fn]) + ';';
+        return src + 'Spawn.fn.' + fn + '=' + stringify(Spawn.fn[fn]) + ';';
       }, '');
 
     function stringify(val) {
@@ -292,6 +295,7 @@
             'this.worker = self;',
             'this._init();',
           '}',
+          'Spawn.fn=Spawn.prototype;',
           spawnPrototypeSource,
           'return new Spawn;',
         '})();'
