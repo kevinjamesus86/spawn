@@ -161,9 +161,10 @@
    * @return {Spawn}
    */
   Spawn.prototype.close = function() {
-    if ('close' in this.worker) {
+    if (this.isWorker) {
+      this.emit('spawn_close');
       this.worker.close();
-    } else if ('terminate' in this.worker) {
+    } else {
       this.worker.terminate();
     }
     this.acks = {};
@@ -219,13 +220,21 @@
       var event = e.data.event;
       var id = e.data.id;
 
-      if ('spawn_ack' === event && id in self.acks) {
-        self.acks[id](data);
-        delete self.acks[id];
-      } else if ('spawn_import' === event) {
-        self.import.apply(self, data);
-      } else {
-        self._invoke(event, data, id);
+      switch (event) {
+        case 'spawn_ack':
+          if (id in self.acks) {
+            self.acks[id](data);
+            delete self.acks[id];
+          }
+          break;
+        case 'spawn_import':
+          self.import.apply(self, data);
+          break;
+        case 'spawn_close':
+          self.close();
+          break;
+        default:
+          self._invoke(event, data, id, ack);
       }
     };
 
