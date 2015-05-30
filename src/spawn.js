@@ -86,21 +86,13 @@
   /**
    * Add an event listener for a given event
    *
-   * @param {(Object|string)} event
+   * @param {string} event
    * @param {Function} handler
    * @return {Spawn}
    */
   Spawn.fn.on = function(event, handler) {
-    if ('object' === typeof event) {
-      for (var e in event) {
-        if (Object.prototype.hasOwnProperty.call(event, e)) {
-          this.on(e, event[e]);
-        }
-      }
-    } else {
-      this.callbacks[event] = this.callbacks[event] || [];
-      this.callbacks[event].push(handler);
-    }
+    this.callbacks[event] = this.callbacks[event] || [];
+    this.callbacks[event].push(handler);
     return this;
   };
 
