@@ -234,7 +234,7 @@ describe('worker', function() {
     worker.emit('close', function(val) {
       setTimeout(function() {
         expect(callback).not.toHaveBeenCalled();
-        expect(worker.callbacks).toEqual({});
+        expect(worker.callbacks).toEqual(null);
         done();
       }, WORKER_TIMEOUT);
     });
@@ -261,7 +261,7 @@ describe('worker', function() {
     worker.emit('close', function() {
       setTimeout(function() {
         expect(ack).not.toHaveBeenCalled();
-        expect(worker.acks).toEqual({});
+        expect(worker.acks).toEqual(null);
         done();
       }, WORKER_TIMEOUT);
     });

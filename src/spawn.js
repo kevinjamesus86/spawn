@@ -177,12 +177,22 @@
       this.emit('spawn_close');
       this.worker.close();
     } else {
+      this.closed = true;
       this.worker.terminate();
+      URL.revokeObjectURL(this.file);
+
+      // make it a noop
+      this.on = this.emit = this.close =
+        this['import'] = this.importScripts = function() {
+          // consider warning about calling these after the
+          // worker has been closed
+          return this;
+        };
+
+      // null it out
+      this.worker.onerror = this.worker.onmessage =
+        this.acks = this.callbacks = this.file = this.worker = null;
     }
-    this.acks = {};
-    this.callbacks = {};
-    this.worker.onerror = this.worker.onmessage = null;
-    URL.revokeObjectURL(this.file);
     return this;
   };
 
@@ -232,11 +242,13 @@
       var data = e.data.data;
       var event = e.data.event;
       var id = e.data.id;
+      var fn;
 
       switch (event) {
         case 'spawn_ack':
-          self.acks[id](data);
+          fn = self.acks[id];
           delete self.acks[id];
+          fn(data);
           break;
         case 'spawn_import':
           self.importScripts.apply(self, data);
