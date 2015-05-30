@@ -7,6 +7,17 @@ module.exports = function(grunt) {
 
   grunt.initConfig({
     pkg: grunt.file.readJSON('package.json'),
+    meta: {
+      banner:
+      '/**\n' +
+      ' * <%= pkg.name %>! <%= pkg.description %>\n' +
+      ' * @version v<%= pkg.version %> - <%= grunt.template.today("yyyy-mm-dd") %>\n' +
+      ' * @author <%= pkg.author %>\n' +
+      ' * Copyright (c) <%= grunt.template.today("yyyy") %> Kevin James\n' +
+      ' * Licensed under the MIT license.\n' +
+      ' * <%= pkg.homepage %>\n' +
+      ' */\n'
+    },
     clean: {
       spawn: ['dist/**']
     },
@@ -18,7 +29,12 @@ module.exports = function(grunt) {
     copy: {
       spawn: {
         src: 'src/spawn.js',
-        dest: 'dist/spawn.js'
+        dest: 'dist/spawn.js',
+        options: {
+          process: function(src) {
+            return grunt.template.process('<%= meta.banner %>') + src;
+          }
+        }
       }
     },
     uglify: {
@@ -27,13 +43,7 @@ module.exports = function(grunt) {
           'dist/spawn.min.js': 'src/spawn.js'
         },
         options: {
-          banner: '/**\n' +
-            ' * <%= pkg.description %>\n' +
-            ' * @version v<%= pkg.version %> - <%= grunt.template.today("yyyy-mm-dd") %>\n' +
-            ' * @author <%= pkg.author %>\n' +
-            ' * Copyright (c) <%= grunt.template.today("yyyy") %> Kevin James\n' +
-            ' * Licensed under the MIT license.\n' +
-            ' */\n'
+          banner: '<%= meta.banner %>'
         }
       }
     },
