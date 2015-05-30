@@ -78,6 +78,7 @@
    * script paths with the main threads href, solving this problem
    */
   Spawn.fn.location = {
+    origin: location.origin || location.protocol + '//' + location.host,
     originPath: location.href.match(/^(.*\/)?(?:$|(.+?)(?:(\.[^.]*$)|$))/)[1].
       replace(/\/?$/, '') + '/'
   };
