@@ -44,7 +44,7 @@
     this.file = URL.createObjectURL(new Blob([
       spawnWorkerSourceCode + '(' + fn.toString() + ').call(self);'
     ], {
-      type: 'text/javascript'
+      type: 'application/javascript'
     }));
 
     this.worker = new Worker(this.file);
