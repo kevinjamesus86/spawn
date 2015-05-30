@@ -156,58 +156,39 @@ describe('worker', function() {
     });
   });
 
-  it('can invoke a responder if no event is expecting an acknowledgment', function(done) {
-    createWorker(function() {
-      spawn.on('greet', function(name, responder) {
-        responder('Hello, ' + name + '!');
-      });
-    });
-
-    worker.emit('greet', 'James');
-    expect(Object.keys(worker.acks).length).toBe(0);
-
-    setTimeout(done, WORKER_TIMEOUT);
-  });
-
   it('stops receiving events after being closed from the main thread', function(done) {
     createWorker(function() {
-      spawn.on('ping', function(val, responder) {
-        responder(val);
+      spawn.on('ping', function(_, responder) {
+        responder();
       });
     });
 
-    worker.emit('ping', 'pong', function(result) {
-      expect(result).toEqual('pong');
-    });
+    var ack = jasmine.createSpy('ack');
 
+    worker.emit('ping', ack);
+    worker.emit('ping', ack);
     worker.close();
 
-    var ack = jasmine.createSpy('ack');
-    worker.emit('ping', 'pong', ack);
-
-    setTimeout(function() {
-      expect(ack).not.toHaveBeenCalled();
-      done();
-    }, WORKER_TIMEOUT);
+    expect(ack).not.toHaveBeenCalled();
+    expect(worker.acks).toEqual(null);
+    done();
   });
 
   it('stops receiving events after being closed from the worker thread', function(done) {
     createWorker(function() {
-      spawn.on('ping', function(val, responder) {
-        responder(val);
+      spawn.on('ping', function(_, responder) {
+        responder();
         spawn.close();
       });
     });
 
-    worker.emit('ping', 'pong', function(result) {
-      expect(result).toEqual('pong');
-    });
-
     var ack = jasmine.createSpy('ack');
-    worker.emit('ping', 'pong', ack);
+
+    worker.emit('ping', ack);
+    worker.emit('ping', ack);
 
     setTimeout(function() {
-      expect(ack).not.toHaveBeenCalled();
+      expect(ack.calls.count()).toBe(1);
       done();
     }, WORKER_TIMEOUT);
   });
@@ -217,23 +198,17 @@ describe('worker', function() {
       spawn.on('close', function(val, responder) {
         responder();
         spawn.close();
-        spawn.emit('message1', false);
-        spawn.emit('message1', false);
       });
     });
 
-    var callback = jasmine.createSpy('callback');
-    worker.on('message1', callback);
-    worker.on('message2', callback);
-
+    function callback(){}
+    worker.on('message', callback);
     expect(worker.callbacks).toEqual({
-      message1: [callback],
-      message2: [callback]
+      message: [callback]
     });
 
     worker.emit('close', function(val) {
       setTimeout(function() {
-        expect(callback).not.toHaveBeenCalled();
         expect(worker.callbacks).toEqual(null);
         done();
       }, WORKER_TIMEOUT);
@@ -246,11 +221,10 @@ describe('worker', function() {
         responder();
         spawn.close();
       });
-      spawn.on('wont invoke responder', function() {});
     });
 
-    var ack = jasmine.createSpy('ack');
-    worker.emit('wont invoke responder', ack);
+    function ack(){}
+    worker.emit('msg', ack);
 
     (function() {
       var keys = Object.keys(worker.acks);
@@ -260,7 +234,6 @@ describe('worker', function() {
 
     worker.emit('close', function() {
       setTimeout(function() {
-        expect(ack).not.toHaveBeenCalled();
         expect(worker.acks).toEqual(null);
         done();
       }, WORKER_TIMEOUT);
