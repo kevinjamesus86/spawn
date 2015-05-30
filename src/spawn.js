@@ -42,7 +42,7 @@
     }
 
     this.file = URL.createObjectURL(new Blob([
-      generateSpawnWorkerSource() + '(' + fn.toString() + ').call(self);'
+      spawnWorkerSourceCode + '(' + fn.toString() + ').call(self);'
     ], {
       type: 'text/javascript'
     }));
@@ -263,7 +263,7 @@
   /**
    * Generate Spawn worker source code from .. Spawn
    */
-  var generateSpawnWorkerSource = (function() {
+  var spawnWorkerSourceCode = (function() {
 
     // Stringify Spawn's prototype so it
     // can be used in the worker source code
@@ -278,20 +278,18 @@
         return src + 'Spawn.fn.' + fn + '=' + val + ';';
       }, '');
 
-    return function() {
-      return [
-        'self.spawn = (function() {',
-          'function Spawn() {',
-            'this.isWorker = true;',
-            'this.worker = self;',
-            'this._init();',
-          '}',
-          'Spawn.fn=Spawn.prototype;',
-          spawnPrototypeSource,
-          'return new Spawn;',
-        '})();'
-      ].join('\n');
-    };
+    return [
+      'self.spawn = (function() {',
+        'function Spawn() {',
+          'this.isWorker = true;',
+          'this.worker = self;',
+          'this._init();',
+        '}',
+        'Spawn.fn=Spawn.prototype;',
+        spawnPrototypeSource,
+        'return new Spawn;',
+      '})();'
+    ].join('\n');
   })();
 
   return function spawn(src) {
