@@ -54,6 +54,10 @@
    * @constructor
    */
   function Spawn(src) {
+    if (!(this instanceof Spawn)) {
+      return new Spawn(src);
+    }
+
     this.isMainThread = true;
 
     var file;
@@ -313,7 +317,5 @@
     );
   })();
 
-  return function spawn(src) {
-    return new Spawn(src);
-  };
+  return Spawn;
 });
