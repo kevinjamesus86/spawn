@@ -1,9 +1,10 @@
 /**
- * sane, flexible threading for modern browsers
- * @version v0.1.0 - 2015-05-29
+ * spawn! event-driven web workers for modern browsers
+ * @version v0.2.0 - 2015-05-31
  * @author Kevin James <kevinjamesus86@gmail.com>
  * Copyright (c) 2015 Kevin James
  * Licensed under the MIT license.
+ * https://github.com/kevinjamesus86/spawn
  */
 (function(root, factory) {
 
@@ -32,6 +33,20 @@
    */
   var noop = function() {};
 
+  // RegExp that matches comments
+  var COMMENTS_RE = /((\/\/.*$)|(\/\*[\s\S]*?\*\/))/mg;
+
+  // RegExp that matches the outer most function, capturing the body
+  var FUNCTION_BODY_RE = /^function\s*[^{]*\{([\s\S]*)\}$/m;
+
+  /**
+   * Returns the body of a function
+   * @param {Function} fn
+   */
+  var getFunctionBody = function(fn) {
+    return fn.toString().replace(COMMENTS_RE, '').replace(FUNCTION_BODY_RE, '$1');
+  };
+
   /**
    * @param {(string|Function)} src - worker source
    * @constructor
@@ -39,27 +54,26 @@
   function Spawn(src) {
     this.isMainThread = true;
 
-    var fn;
+    var file;
+    var code = '';
 
     if ('string' === typeof src) {
-      fn = noop;
+      file = src;
     } else if ('function' === typeof src) {
-      fn = src;
-      src = null;
+      code = getFunctionBody(src);
     }
 
     this.file = URL.createObjectURL(new Blob([
-      generateSpawnWorkerSource() + '(' + fn.toString() + ').call(self);'
+      spawnWorkerSourceCode + code
     ], {
-      type: 'text/javascript'
+      type: 'application/javascript'
     }));
 
     this.worker = new Worker(this.file);
     this._init();
 
-    // import the worker src if src was a string
-    if (src) {
-      this.importScripts(src);
+    if (file) {
+      this.importScripts(file);
     }
   }
 
@@ -85,7 +99,7 @@
    * script paths with the main threads href, solving this problem
    */
   Spawn.fn.location = {
-    origin: location.origin,
+    origin: location.origin || location.protocol + '//' + location.host,
     originPath: location.href.match(/^(.*\/)?(?:$|(.+?)(?:(\.[^.]*$)|$))/)[1].
       replace(/\/?$/, '') + '/'
   };
@@ -93,21 +107,13 @@
   /**
    * Add an event listener for a given event
    *
-   * @param {(Object|string)} event
+   * @param {string} event
    * @param {Function} handler
    * @return {Spawn}
    */
   Spawn.fn.on = function(event, handler) {
-    if ('object' === typeof event) {
-      for (var e in event) {
-        if (Object.prototype.hasOwnProperty.call(event, e)) {
-          this.on(e, event[e]);
-        }
-      }
-    } else {
-      this.callbacks[event] = this.callbacks[event] || [];
-      this.callbacks[event].push(handler);
-    }
+    this.callbacks[event] = this.callbacks[event] || [];
+    this.callbacks[event].push(handler);
     return this;
   };
 
@@ -160,7 +166,7 @@
       var length = fns.length,
         index = -1;
       while (++index < length) {
-        fns[index](data, responder);
+        fns[index].call(self, data, responder);
       }
     }
 
@@ -184,12 +190,22 @@
       this.emit('spawn_close');
       this.worker.close();
     } else {
+      this.closed = true;
       this.worker.terminate();
+      URL.revokeObjectURL(this.file);
+
+      // make it a noop
+      this.on = this.emit = this.close =
+        this['import'] = this.importScripts = function() {
+          // consider warning about calling these after the
+          // worker has been closed
+          return this;
+        };
+
+      // null it out
+      this.worker.onerror = this.worker.onmessage =
+        this.acks = this.callbacks = this.file = this.worker = null;
     }
-    this.acks = {};
-    this.callbacks = {};
-    this.worker.onerror = this.worker.onmessage = null;
-    URL.revokeObjectURL(this.file);
     return this;
   };
 
@@ -199,7 +215,6 @@
    * @param {...string} var_args - scripts to import
    * @return {Spawn}
    */
-  Spawn.fn['import'] =
   Spawn.fn.importScripts = function() {
     var args = Array.prototype.slice.call(arguments, 0);
 
@@ -239,11 +254,13 @@
       var data = e.data.data;
       var event = e.data.event;
       var id = e.data.id;
+      var fn;
 
       switch (event) {
         case 'spawn_ack':
-          self.acks[id](data);
+          fn = self.acks[id];
           delete self.acks[id];
+          fn.call(self, data);
           break;
         case 'spawn_import':
           self.importScripts.apply(self, data);
@@ -270,7 +287,7 @@
   /**
    * Generate Spawn worker source code from .. Spawn
    */
-  var generateSpawnWorkerSource = (function() {
+  var spawnWorkerSourceCode = (function() {
 
     // Stringify Spawn's prototype so it
     // can be used in the worker source code
@@ -285,20 +302,18 @@
         return src + 'Spawn.fn.' + fn + '=' + val + ';';
       }, '');
 
-    return function() {
-      return [
-        'self.spawn = (function() {',
-          'function Spawn() {',
-            'this.isWorker = true;',
-            'this.worker = self;',
-            'this._init();',
-          '}',
-          'Spawn.fn=Spawn.prototype;',
-          spawnPrototypeSource,
-          'return new Spawn;',
-        '})();'
-      ].join('\n');
-    };
+    return [
+      'self.spawn = (function() {',
+        'function Spawn() {',
+          'this.isWorker = true;',
+          'this.worker = self;',
+          'this._init();',
+        '}',
+        'Spawn.fn=Spawn.prototype;',
+        spawnPrototypeSource,
+        'return new Spawn;',
+      '})();'
+    ].join('\n');
   })();
 
   return function spawn(src) {

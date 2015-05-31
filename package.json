@@ -1,6 +1,6 @@
 {
   "name": "spawn",
-  "version": "0.1.1",
+  "version": "0.2.0",
   "repository": "kevinjamesus86/spawn",
   "homepage": "https://github.com/kevinjamesus86/spawn",
   "description": "event-driven web workers for modern browsers",
