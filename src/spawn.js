@@ -40,6 +40,16 @@
   };
 
   /**
+   * Creates a javascript file/objectURL from `source`
+   * @param {string} source
+   */
+  var createFile = function(source) {
+    return URL.createObjectURL(new Blob([source], {
+      type: 'application/javascript'
+    }));
+  };
+
+  /**
    * @param {(string|Function)} src - worker source
    * @constructor
    */
@@ -55,12 +65,7 @@
       code = getFunctionBody(src);
     }
 
-    this.file = URL.createObjectURL(new Blob([
-      "importScripts('" + spawnWorkerURL + "');\n" + code
-    ], {
-      type: 'application/javascript'
-    }));
-
+    this.file = createFile("importScripts('" + spawnWorkerURL + "');\n" + code);
     this.worker = new Worker(this.file);
     this._init();
 
@@ -294,22 +299,18 @@
         return src + 'Spawn.fn.' + fn + '=' + val + ';';
       }, '');
 
-    var source = [
-      'self.spawn = (function() {',
-        'function Spawn() {',
-          'this.isWorker = true;',
-          'this.worker = self;',
-          'this._init();',
-        '}',
-        'Spawn.fn=Spawn.prototype;',
-        spawnPrototypeSource,
-        'return new Spawn;',
+    return createFile(
+      'self.spawn = (function() {' +
+        'function Spawn() {' +
+          'this.isWorker = true;' +
+          'this.worker = self;' +
+          'this._init();' +
+        '}' +
+        'Spawn.fn=Spawn.prototype;' +
+        spawnPrototypeSource +
+        'return new Spawn;' +
       '})();'
-    ].join('\n');
-
-    return URL.createObjectURL(new Blob([ source ], {
-      type: 'application/javascript'
-    }));
+    );
   })();
 
   return function spawn(src) {
