@@ -34,6 +34,49 @@ describe('spawn', function() {
     expect(init).not.toThrow();
   });
 
+  it('unwraps an obnoxious function', function(done) {
+    function init() {
+      createWorker(function fn /* why */ ($1, /* would *\/* */$2,
+        /** anyone
+         *  everrr
+         */ $do
+         // this
+          ) /** :{ **/ {
+
+        // make sure it actually gets this code
+        spawn.on('test', function(_, responder) {
+          responder( 'function' === typeof weirdFormatting );
+        });
+
+        // and captures to the very last `}`
+        function weirdFormatting() {
+          // it ends on the next line intentionally
+      }});
+    }
+
+    expect(init).not.toThrow();
+
+    worker.emit('test', function(weirdFormattingIsFunction) {
+      expect(weirdFormattingIsFunction).toBe(true);
+      done();
+    });
+  });
+
+  it('does not create a closure when creating a worker from a function', function(done) {
+    createWorker(function() {
+      var $name = 'kevin';
+
+      spawn.on('is global', function(varName, responder) {
+        responder( 'undefined' != typeof self[varName] );
+      });
+    });
+
+    worker.emit('is global', '$name', function($nameIsGlobal) {
+      expect($nameIsGlobal).toBe(true);
+      done();
+    });
+  });
+
   it('can be called with a file path', function(done) {
     var timer;
 

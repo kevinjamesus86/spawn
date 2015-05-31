@@ -25,6 +25,20 @@
    */
   var noop = function() {};
 
+  // RegExp that matches comments
+  var COMMENTS_RE = /((\/\/.*$)|(\/\*[\s\S]*?\*\/))/mg;
+
+  // RegExp that matches the outer most function, capturing the body
+  var FUNCTION_BODY_RE = /^function\s*[^{]*\{([\s\S]*)\}$/m;
+
+  /**
+   * Returns the body of a function
+   * @param {Function} fn
+   */
+  var getFunctionBody = function(fn) {
+    return fn.toString().replace(COMMENTS_RE, '').replace(FUNCTION_BODY_RE, '$1');
+  };
+
   /**
    * @param {(string|Function)} src - worker source
    * @constructor
@@ -32,17 +46,17 @@
   function Spawn(src) {
     this.isMainThread = true;
 
-    var fn;
+    var file;
+    var code = '';
 
     if ('string' === typeof src) {
-      fn = noop;
+      file = src;
     } else if ('function' === typeof src) {
-      fn = src;
-      src = null;
+      code = getFunctionBody(src);
     }
 
     this.file = URL.createObjectURL(new Blob([
-      spawnWorkerSourceCode + '(' + fn.toString() + ').call(self);'
+      spawnWorkerSourceCode + code
     ], {
       type: 'application/javascript'
     }));
@@ -50,9 +64,8 @@
     this.worker = new Worker(this.file);
     this._init();
 
-    // import the worker src if src was a string
-    if (src) {
-      this.importScripts(src);
+    if (file) {
+      this.importScripts(file);
     }
   }
 
