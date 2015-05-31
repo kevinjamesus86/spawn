@@ -10,9 +10,9 @@ _event-driven web workers for modern browsers_
 ## Install
 
 ```html
-<script src="https://cdn.rawgit.com/kevinjamesus86/spawn/v0.1.1/dist/spawn.js"></script>
+<script src="https://cdn.rawgit.com/kevinjamesus86/spawn/v0.2.0/dist/spawn.js"></script>
 or
-<script src="https://cdn.rawgit.com/kevinjamesus86/spawn/v0.1.1/dist/spawn.min.js"></script>
+<script src="https://cdn.rawgit.com/kevinjamesus86/spawn/v0.2.0/dist/spawn.min.js"></script>
 ```
 
 ## Usage
@@ -153,10 +153,6 @@ var maths = spawn(
 
     Discards any tasks queued in the worker's event loop, effectively closing
     the worker.
-
-    ```js
-
-    ```
 
   - **`importScripts(script: string [, ...])`**
 
