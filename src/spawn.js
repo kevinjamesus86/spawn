@@ -158,6 +158,7 @@
       var length = fns.length,
         index = -1;
       while (++index < length) {
+        fns[index].call(self, data, responder);
       }
     }
 
