@@ -207,7 +207,6 @@
    * @param {...string} var_args - scripts to import
    * @return {Spawn}
    */
-  Spawn.fn['import'] =
   Spawn.fn.importScripts = function() {
     var args = Array.prototype.slice.call(arguments, 0);
 
