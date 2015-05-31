@@ -158,7 +158,6 @@
       var length = fns.length,
         index = -1;
       while (++index < length) {
-        fns[index](data, responder);
       }
     }
 
@@ -253,7 +252,7 @@
         case 'spawn_ack':
           fn = self.acks[id];
           delete self.acks[id];
-          fn(data);
+          fn.call(self, data);
           break;
         case 'spawn_import':
           self.importScripts.apply(self, data);
