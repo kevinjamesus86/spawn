@@ -78,6 +78,57 @@
     }
   }
 
+  /**
+   * Create a one off task that closes the worker
+   * once a result has been obtained or an error is thrown.
+   *
+   * @param {*} data
+   * @param {Function} task
+   * @param {Function} callback
+   */
+  Spawn.run = function(data, task, callback) {
+    var worker;
+
+    /**
+     * Enabling CSP disallows the use of `Function` to dynamically
+     * construct a function. To support CSP we MUST create an object URL
+     * and import the task code into the worker.
+     */
+    var file = createFile(
+      // Task code
+      'var task = (' + task.toString() + ');' +
+      // On `run` event, run task code
+      'spawn.on(\'run\', function(data, send) {' +
+        // Preserve the `this` value of `self` and avoid
+        // exposing the `data` & `send` arguments directly
+        'task.call(self, data, send);' +
+      '});'
+    );
+
+    function eventHandler(result) {
+      worker.close();
+      URL.revokeObjectURL(file);
+
+      try {
+        if (result instanceof ErrorEvent) {
+          callback.call(worker, result);
+        } else {
+          callback.call(worker, null, result);
+        }
+      } catch (e) {
+        throw e;
+      } finally {
+        worker = file = null;
+      }
+    }
+
+    worker = new Spawn(file).
+      on('error', eventHandler).
+      emit('run', data, eventHandler);
+
+    return worker;
+  };
+
   // mins a little better
   Spawn.fn = Spawn.prototype;
 

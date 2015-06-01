@@ -109,6 +109,31 @@ describe('spawn', function() {
     });
   });
 
+  it('closes the thread after running a one-off task', function(done) {
+    worker = spawn.run([1, 2, 3], function(data, send) {
+      send(data.map(function cube(v) {
+        return v * v * v;
+      }));
+    }, function resultHandler(err, result) {
+      expect(err).toBe(null);
+      expect(result).toEqual([1, 8, 27]);
+      expect(this.closed).toBe(true);
+      done();
+    });
+  });
+
+  it('closes the thread after running a one-off task that throws', function(done) {
+    worker = spawn.run(null, function() {
+      throw 'oh noz';
+    }, function resultHandler(err, result) {
+      err.preventDefault();
+
+      expect(err instanceof ErrorEvent).toBe(true);
+      expect(result).toBeUndefined();
+      expect(this.closed).toBe(true);
+      done();
+    });
+  });
 });
 
 describe('worker', function() {
