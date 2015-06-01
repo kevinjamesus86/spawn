@@ -196,12 +196,11 @@
       URL.revokeObjectURL(this.file);
 
       // make it a noop
-      this.on = this.emit = this.close =
-        this['import'] = this.importScripts = function() {
-          // consider warning about calling these after the
-          // worker has been closed
-          return this;
-        };
+      this.on = this.emit = this.close = this.importScripts = function() {
+        // consider warning about calling these after the
+        // worker has been closed
+        return this;
+      };
 
       // null it out
       this.worker.onerror = this.worker.onmessage =
