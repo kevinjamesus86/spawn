@@ -230,7 +230,15 @@
         arg = args[index];
         if ('/' === arg.charAt(0)) {
           args[index] = this.location.origin + arg;
-        } else if (!/^https?:/.test(arg)) {
+
+        /**
+         * Object URLs come in different shapes and sizes.. For example:
+         *
+         * IE - blob:D3E252D7-F4F5-4D2A-8519-DF54CABCCE95
+         * Chrome - blob:http%3A//srv/60fd3cdc-121f-4c0c-a70b-45688912e2d1
+         * Firefox - blob:http://srv/08b20d39-fed3-456c-a7e0-3493b86c8c33
+         */
+        } else if (!/^(blob|https?)(:|%3a)/i.test(arg)) {
           args[index] = this.location.originPath + arg;
         }
       }
