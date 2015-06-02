@@ -109,6 +109,54 @@ describe('spawn', function() {
     });
   });
 
+  it('can globally configure Spawn worker instance name', function() {
+    // backup
+    var orig_workerAs = spawn.config.workerAs;
+    // export under a new name
+    spawn.config.workerAs = 'worker';
+
+    createWorker(function() {
+      worker.on('test', function(_, responder) {
+        responder({
+          spawn: typeof self.spawn,
+          worker: typeof self.worker
+        });
+      });
+    });
+
+    worker.emit('test', function(ns) {
+      expect(ns.spawn).toBe('undefined');
+      expect(ns.worker).toBe('object');
+
+      // reset the ns
+      spawn.config.workerAs = orig_workerAs;
+
+      done();
+    });
+  });
+
+  it('can configure Spawn worker instance name via opts', function() {
+    var orig_workerAs = spawn.config.workerAs;
+
+    worker = spawn(function() {
+      worker.on('test', function(_, responder) {
+        responder({
+          spawn: typeof self.spawn,
+          worker: typeof self.worker
+        });
+      });
+    }, {
+      workerAs: 'worker'
+    });
+
+    worker.emit('test', function(ns) {
+      expect(spawn.config.workerAs).toBe(orig_workerAs);
+      expect(ns.spawn).toBe('undefined');
+      expect(ns.worker).toBe('object');
+      done();
+    });
+  });
+
 });
 
 describe('worker', function() {
