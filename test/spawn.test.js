@@ -297,4 +297,24 @@ describe('worker', function() {
       done();
     });
   });
+
+  it('can have it\'s own `onmessage` handler', function(done) {
+    createWorker(function() {
+      onmessage = function() {
+        spawn.emit('self.onmessage');
+      };
+      spawn.on('test', function(_, responder) {
+        // make sure this runs after the `onmessage` handler above
+        setTimeout(responder);
+      });
+    });
+
+    var callback = jasmine.createSpy('callback');
+    worker.on('self.onmessage', callback);
+
+    worker.emit('test', function() {
+      expect(callback).toHaveBeenCalled();
+      done();
+    });
+  });
 });

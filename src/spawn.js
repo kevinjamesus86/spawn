@@ -202,9 +202,12 @@
         return this;
       };
 
+      // remove the event handlers
+      this.worker.removeEventListener('message', this._messageHandler, false);
+      this.worker.removeEventListener('error', this._errorHandler, false);
+
       // null it out
-      this.worker.onerror = this.worker.onmessage =
-        this.acks = this.callbacks = this.file = this.worker = null;
+      this.acks = this.callbacks = this.file = this.worker = null;
     }
     return this;
   };
@@ -258,38 +261,57 @@
     self.acks = {};
     self.callbacks = {};
 
-    self.worker.onmessage = function(e) {
-      var data = e.data.data;
-      var event = e.data.event;
-      var id = e.data.id;
-      var fn;
-
-      switch (event) {
-        case 'spawn_ack':
-          fn = self.acks[id];
-          delete self.acks[id];
-          fn.call(self, data);
-          break;
-        case 'spawn_import':
-          self.importScripts.apply(self, data);
-          break;
-        case 'spawn_close':
-          self.close();
-          break;
-        default:
-          self._invoke(event, data, id, e.data.ack);
-      }
-    };
+    self._messageHandler = self._messageHandler.bind(self);
+    self.worker.addEventListener('message', self._messageHandler, false);
 
     if (self.isMainThread) {
-      /**
-       * Deal with errors on the main thread so we have the option
-       * of calling the ErrorEvent's `preventDefault()` method
-       */
-      self.worker.onerror = function(event) {
-        self._invoke('error', event);
-      };
+
+      // see `Spawn.fn._errorHandler` doc for why this
+      // only applies to the main thread.
+      self._errorHandler = self._errorHandler.bind(self);
+      self.worker.addEventListener('error', self._errorHandler, false);
     }
+  };
+
+  /**
+   * Web Worker `onmessage` event handler. Applied to the main thread
+   * and workers.
+   *
+   * @api private
+   */
+  Spawn.fn._messageHandler = function(e) {
+    var self = this;
+    var data = e.data.data;
+    var event = e.data.event;
+    var id = e.data.id;
+    var fn;
+
+    switch (event) {
+      case 'spawn_ack':
+        fn = self.acks[id];
+        delete self.acks[id];
+        fn.call(self, data);
+        break;
+      case 'spawn_import':
+        self.importScripts.apply(self, data);
+        break;
+      case 'spawn_close':
+        self.close();
+        break;
+      default:
+        self._invoke(event, data, id, e.data.ack);
+    }
+  };
+
+  /**
+   * Web Worker `onerror` event handler. This only applies to
+   * the main thread, as dealing with errors there gives us the
+   * option of calling the ErrorEvent's `preventDefault()` method.
+   *
+   * @api private
+   */
+  Spawn.fn._errorHandler = function(event) {
+    this._invoke('error', event);
   };
 
   /**
