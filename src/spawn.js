@@ -63,7 +63,7 @@
       code = getFunctionBody(src);
     }
 
-    this.file = createFile("importScripts('" + spawnWorkerURL + "');\n" + code);
+    this.file = createFile('importScripts("' + spawnWorkerURL + '");\n' + code);
     this.worker = new Worker(this.file);
     this._init();
 

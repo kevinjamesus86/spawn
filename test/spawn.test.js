@@ -67,7 +67,7 @@ describe('spawn', function() {
       var $name = 'kevin';
 
       spawn.on('is global', function(varName, responder) {
-        responder( 'undefined' != typeof self[varName] );
+        responder( 'undefined' !== typeof self[varName] );
       });
     });
 
@@ -300,7 +300,7 @@ describe('worker', function() {
 
   it('can have it\'s own `onmessage` handler', function(done) {
     createWorker(function() {
-      onmessage = function() {
+      self.onmessage = function() {
         spawn.emit('self.onmessage');
       };
       spawn.on('test', function(_, responder) {
