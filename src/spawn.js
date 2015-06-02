@@ -18,6 +18,30 @@
   // keep em close
   var Worker = window.Worker;
   var URL = window.URL || window.webkitURL;
+  var hasOwn = Object.prototype.hasOwnProperty;
+
+  /**
+   * Shallow copy all of the properties from the `source` objects
+   * over to the `dest` object, returning `dest`.
+   *
+   * @param {Object} dest
+   * @param {?Object...} source
+   * @return {Object} dest
+   * @api private
+   */
+  var extend = function(dest) {
+    var from = Array.prototype.slice.call(arguments, 1);
+    from.forEach(function(source) {
+      if (source) {
+        for (var prop in source) {
+          if (hasOwn.call(source, prop)) {
+            dest[prop] = source[prop];
+          }
+        }
+      }
+    });
+    return dest;
+  };
 
   // RegExp that matches comments
   var COMMENTS_RE = /((\/\/.*$)|(\/\*[\s\S]*?\*\/))/mg;
@@ -43,17 +67,21 @@
     }));
   };
 
+  /** @const */
+  var CONFIG = {
+    workerAs: 'spawn'
+  };
+
   /**
    * @param {(string|Function)} src - worker source
    * @constructor
    */
-  function Spawn(src) {
+  function Spawn(src, opts) {
     if (!(this instanceof Spawn)) {
-      return new Spawn(src);
+      return new Spawn(src, opts);
     }
 
-    this.isMainThread = true;
-
+    opts = extend({}, Spawn.config, opts);
     var file;
     var code = '';
 
@@ -63,7 +91,12 @@
       code = getFunctionBody(src);
     }
 
-    this.file = createFile('importScripts("' + spawnWorkerURL + '");\n' + code);
+    this.isMainThread = true;
+    this.file = createFile(
+      'importScripts("' + spawnWorkerURL + '");\n' +
+      'spawn.exportAs("' + opts.workerAs + '");\n' +
+      code
+    );
     this.worker = new Worker(this.file);
     this._init();
 
@@ -74,6 +107,9 @@
 
   // mins a little better
   Spawn.fn = Spawn.prototype;
+
+  // Expose Spawn config
+  Spawn.config = extend(CONFIG);
 
   /**
    * Creates a relatively safe UUID
@@ -335,7 +371,16 @@
         '}' +
         'Spawn.fn=Spawn.prototype;' +
         spawnPrototypeSource +
-        'return new Spawn;' +
+        'var instance;' +
+        'var prevExport;' +
+        'Spawn.fn.exportAs = function(name) {' +
+          'self[name] = instance;' +
+          'if (prevExport) {' +
+            'delete self[prevExport];' +
+          '}' +
+          'prevExport = name;' +
+        '};' +
+        'return (instance = new Spawn);' +
       '})();'
     );
   })();
