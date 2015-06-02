@@ -19,12 +19,6 @@
   var Worker = window.Worker;
   var URL = window.URL || window.webkitURL;
 
-  /**
-   * Used for generating an worker with an empty body in
-   * the case that a source path is provided
-   */
-  var noop = function() {};
-
   // RegExp that matches comments
   var COMMENTS_RE = /((\/\/.*$)|(\/\*[\s\S]*?\*\/))/mg;
 
