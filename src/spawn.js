@@ -51,6 +51,7 @@
 
   /**
    * Returns the body of a function
+   *
    * @param {Function} fn
    */
   var getFunctionBody = function(fn) {
@@ -59,7 +60,9 @@
 
   /**
    * Creates a javascript file/objectURL from `source`
+   *
    * @param {string} source
+   * @return {string} objectURL
    */
   var createFile = function(source) {
     return URL.createObjectURL(new Blob([source], {
@@ -74,6 +77,7 @@
 
   /**
    * @param {(string|Function)} src - worker source
+   *
    * @constructor
    */
   function Spawn(src, opts) {
@@ -113,6 +117,7 @@
 
   /**
    * Creates a relatively safe UUID
+   *
    * @return {string}
    */
   Spawn.fn.uuid = function() {
