@@ -168,7 +168,7 @@ var maths = Spawn(
       this.close();
     });
 
-    // Emit and event from the main thread,
+    // Emit an event from the main thread,
     // listening for the event on the worker thread
 
     Spawn(function() {
