@@ -15,11 +15,11 @@ describe('window', function() {
 
 });
 
-describe('spawn', function() {
+describe('Spawn', function() {
   var worker;
 
   function createWorker(src) {
-    worker = spawn(src);
+    worker = Spawn(src);
   }
 
   afterEach(function() {
@@ -111,9 +111,9 @@ describe('spawn', function() {
 
   it('can globally configure Spawn worker instance name', function() {
     // backup
-    var orig_workerAs = spawn.config.workerAs;
+    var orig_workerAs = Spawn.config.workerAs;
     // export under a new name
-    spawn.config.workerAs = 'worker';
+    Spawn.config.workerAs = 'worker';
 
     createWorker(function() {
       worker.on('test', function(_, responder) {
@@ -129,16 +129,16 @@ describe('spawn', function() {
       expect(ns.worker).toBe('object');
 
       // reset the ns
-      spawn.config.workerAs = orig_workerAs;
+      Spawn.config.workerAs = orig_workerAs;
 
       done();
     });
   });
 
   it('can configure Spawn worker instance name via opts', function() {
-    var orig_workerAs = spawn.config.workerAs;
+    var orig_workerAs = Spawn.config.workerAs;
 
-    worker = spawn(function() {
+    worker = Spawn(function() {
       worker.on('test', function(_, responder) {
         responder({
           spawn: typeof self.spawn,
@@ -150,7 +150,7 @@ describe('spawn', function() {
     });
 
     worker.emit('test', function(ns) {
-      expect(spawn.config.workerAs).toBe(orig_workerAs);
+      expect(Spawn.config.workerAs).toBe(orig_workerAs);
       expect(ns.spawn).toBe('undefined');
       expect(ns.worker).toBe('object');
       done();
@@ -164,7 +164,7 @@ describe('worker', function() {
   var WORKER_TIMEOUT = 15;
 
   function createWorker(src) {
-    worker = spawn(src);
+    worker = Spawn(src);
   }
 
   afterEach(function() {

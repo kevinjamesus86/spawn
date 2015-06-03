@@ -9,7 +9,7 @@
     module.exports = factory();
   } else {
     // browser global
-    root.spawn = factory();
+    root.Spawn = factory();
   }
 
 })(this, function spawnFactory() {
