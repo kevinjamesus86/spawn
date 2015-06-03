@@ -1,6 +1,6 @@
 /**
  * spawn! event-driven web workers for modern browsers
- * @version v0.2.0 - 2015-05-31
+ * @version v1.0.0 - 2015-06-03
  * @author Kevin James <kevinjamesus86@gmail.com>
  * Copyright (c) 2015 Kevin James
  * Licensed under the MIT license.
@@ -17,7 +17,7 @@
     module.exports = factory();
   } else {
     // browser global
-    root.spawn = factory();
+    root.Spawn = factory();
   }
 
 })(this, function spawnFactory() {
@@ -26,12 +26,30 @@
   // keep em close
   var Worker = window.Worker;
   var URL = window.URL || window.webkitURL;
+  var hasOwn = Object.prototype.hasOwnProperty;
 
   /**
-   * Used for generating an worker with an empty body in
-   * the case that a source path is provided
+   * Shallow copy all of the properties from the `source` objects
+   * over to the `dest` object, returning `dest`.
+   *
+   * @param {Object} dest
+   * @param {?Object...} source
+   * @return {Object} dest
+   * @api private
    */
-  var noop = function() {};
+  var extend = function(dest) {
+    var from = Array.prototype.slice.call(arguments, 1);
+    from.forEach(function(source) {
+      if (source) {
+        for (var prop in source) {
+          if (hasOwn.call(source, prop)) {
+            dest[prop] = source[prop];
+          }
+        }
+      }
+    });
+    return dest;
+  };
 
   // RegExp that matches comments
   var COMMENTS_RE = /((\/\/.*$)|(\/\*[\s\S]*?\*\/))/mg;
@@ -41,6 +59,7 @@
 
   /**
    * Returns the body of a function
+   *
    * @param {Function} fn
    */
   var getFunctionBody = function(fn) {
@@ -48,12 +67,33 @@
   };
 
   /**
+   * Creates a javascript file/objectURL from `source`
+   *
+   * @param {string} source
+   * @return {string} objectURL
+   */
+  var createFile = function(source) {
+    return URL.createObjectURL(new Blob([source], {
+      type: 'application/javascript'
+    }));
+  };
+
+  /** @const */
+  var CONFIG = {
+    workerAs: 'spawn'
+  };
+
+  /**
    * @param {(string|Function)} src - worker source
+   *
    * @constructor
    */
-  function Spawn(src) {
-    this.isMainThread = true;
+  function Spawn(src, config) {
+    if (!(this instanceof Spawn)) {
+      return new Spawn(src, config);
+    }
 
+    config = extend({}, Spawn.config, config);
     var file;
     var code = '';
 
@@ -63,12 +103,12 @@
       code = getFunctionBody(src);
     }
 
-    this.file = URL.createObjectURL(new Blob([
-      spawnWorkerSourceCode + code
-    ], {
-      type: 'application/javascript'
-    }));
-
+    this.isMainThread = true;
+    this.file = createFile(
+      'importScripts("' + spawnWorkerURL + '");\n' +
+      'spawn.exportAs("' + config.workerAs + '");\n' +
+      code
+    );
     this.worker = new Worker(this.file);
     this._init();
 
@@ -80,8 +120,12 @@
   // mins a little better
   Spawn.fn = Spawn.prototype;
 
+  // Expose Spawn config
+  Spawn.config = extend(CONFIG);
+
   /**
    * Creates a relatively safe UUID
+   *
    * @return {string}
    */
   Spawn.fn.uuid = function() {
@@ -195,16 +239,18 @@
       URL.revokeObjectURL(this.file);
 
       // make it a noop
-      this.on = this.emit = this.close =
-        this['import'] = this.importScripts = function() {
-          // consider warning about calling these after the
-          // worker has been closed
-          return this;
-        };
+      this.on = this.emit = this.close = this.importScripts = function() {
+        // consider warning about calling these after the
+        // worker has been closed
+        return this;
+      };
+
+      // remove the event handlers
+      this.worker.removeEventListener('message', this._messageHandler, false);
+      this.worker.removeEventListener('error', this._errorHandler, false);
 
       // null it out
-      this.worker.onerror = this.worker.onmessage =
-        this.acks = this.callbacks = this.file = this.worker = null;
+      this.acks = this.callbacks = this.file = this.worker = null;
     }
     return this;
   };
@@ -229,7 +275,15 @@
         arg = args[index];
         if ('/' === arg.charAt(0)) {
           args[index] = this.location.origin + arg;
-        } else if (!/^https?:/.test(arg)) {
+
+        /**
+         * Object URLs come in different shapes and sizes.. For example:
+         *
+         * IE - blob:D3E252D7-F4F5-4D2A-8519-DF54CABCCE95
+         * Chrome - blob:http%3A//srv/60fd3cdc-121f-4c0c-a70b-45688912e2d1
+         * Firefox - blob:http://srv/08b20d39-fed3-456c-a7e0-3493b86c8c33
+         */
+        } else if (!/^(blob|https?)(:|%3a)/i.test(arg)) {
           args[index] = this.location.originPath + arg;
         }
       }
@@ -250,44 +304,63 @@
     self.acks = {};
     self.callbacks = {};
 
-    self.worker.onmessage = function(e) {
-      var data = e.data.data;
-      var event = e.data.event;
-      var id = e.data.id;
-      var fn;
-
-      switch (event) {
-        case 'spawn_ack':
-          fn = self.acks[id];
-          delete self.acks[id];
-          fn.call(self, data);
-          break;
-        case 'spawn_import':
-          self.importScripts.apply(self, data);
-          break;
-        case 'spawn_close':
-          self.close();
-          break;
-        default:
-          self._invoke(event, data, id, e.data.ack);
-      }
-    };
+    self._messageHandler = self._messageHandler.bind(self);
+    self.worker.addEventListener('message', self._messageHandler, false);
 
     if (self.isMainThread) {
-      /**
-       * Deal with errors on the main thread so we have the option
-       * of calling the ErrorEvent's `preventDefault()` method
-       */
-      self.worker.onerror = function(event) {
-        self._invoke('error', event);
-      };
+
+      // see `Spawn.fn._errorHandler` doc for why this
+      // only applies to the main thread.
+      self._errorHandler = self._errorHandler.bind(self);
+      self.worker.addEventListener('error', self._errorHandler, false);
     }
+  };
+
+  /**
+   * Web Worker `onmessage` event handler. Applied to the main thread
+   * and workers.
+   *
+   * @api private
+   */
+  Spawn.fn._messageHandler = function(e) {
+    var self = this;
+    var data = e.data.data;
+    var event = e.data.event;
+    var id = e.data.id;
+    var fn;
+
+    switch (event) {
+      case 'spawn_ack':
+        fn = self.acks[id];
+        delete self.acks[id];
+        fn.call(self, data);
+        break;
+      case 'spawn_import':
+        self.importScripts.apply(self, data);
+        break;
+      case 'spawn_close':
+        self.close();
+        break;
+      default:
+        self._invoke(event, data, id, e.data.ack);
+    }
+  };
+
+  /**
+   * Web Worker `onerror` event handler. This only applies to
+   * the main thread, as dealing with errors there gives us the
+   * option of calling the ErrorEvent's `preventDefault()` method.
+   *
+   * @api private
+   */
+  Spawn.fn._errorHandler = function(event) {
+    this._invoke('error', event);
   };
 
   /**
    * Generate Spawn worker source code from .. Spawn
    */
-  var spawnWorkerSourceCode = (function() {
+  var spawnWorkerURL = (function() {
 
     // Stringify Spawn's prototype so it
     // can be used in the worker source code
@@ -302,21 +375,28 @@
         return src + 'Spawn.fn.' + fn + '=' + val + ';';
       }, '');
 
-    return [
-      'self.spawn = (function() {',
-        'function Spawn() {',
-          'this.isWorker = true;',
-          'this.worker = self;',
-          'this._init();',
-        '}',
-        'Spawn.fn=Spawn.prototype;',
-        spawnPrototypeSource,
-        'return new Spawn;',
+    return createFile(
+      'self.spawn = (function() {' +
+        'function Spawn() {' +
+          'this.isWorker = true;' +
+          'this.worker = self;' +
+          'this._init();' +
+        '}' +
+        'Spawn.fn=Spawn.prototype;' +
+        spawnPrototypeSource +
+        'var instance;' +
+        'var prevExport;' +
+        'Spawn.fn.exportAs = function(name) {' +
+          'self[name] = instance;' +
+          'if (prevExport) {' +
+            'delete self[prevExport];' +
+          '}' +
+          'prevExport = name;' +
+        '};' +
+        'return (instance = new Spawn);' +
       '})();'
-    ].join('\n');
+    );
   })();
 
-  return function spawn(src) {
-    return new Spawn(src);
-  };
+  return Spawn;
 });

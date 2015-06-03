@@ -1,18 +1,18 @@
-# spawn [![Codacy Badge](https://www.codacy.com/project/badge/4a6d5150e5834dcf94bc08177422e14e)](https://www.codacy.com/app/kevinjamesus86/spawn)
+# Spawn [![Codacy Badge](https://www.codacy.com/project/badge/4a6d5150e5834dcf94bc08177422e14e)](https://www.codacy.com/app/kevinjamesus86/spawn)
 _event-driven web workers for modern browsers_
 
 ### Download
 
 + JS
- - [spawn.js](https://raw.githubusercontent.com/kevinjamesus86/spawn/master/dist/spawn.js) big, or
- - [spawn.min.js](https://raw.githubusercontent.com/kevinjamesus86/spawn/master/dist/spawn.min.js) small
+ - [spawn.js](https://raw.githubusercontent.com/kevinjamesus86/spawn/v1.0.0/dist/spawn.js) big, or
+ - [spawn.min.js](https://raw.githubusercontent.com/kevinjamesus86/spawn/v1.0.0/dist/spawn.min.js) small
 
 ## Install
 
 ```html
-<script src="https://cdn.rawgit.com/kevinjamesus86/spawn/v0.2.0/dist/spawn.js"></script>
+<script src="https://cdn.rawgit.com/kevinjamesus86/spawn/v1.0.0/dist/spawn.js"></script>
 or
-<script src="https://cdn.rawgit.com/kevinjamesus86/spawn/v0.2.0/dist/spawn.min.js"></script>
+<script src="https://cdn.rawgit.com/kevinjamesus86/spawn/v1.0.0/dist/spawn.min.js"></script>
 ```
 
 ## Usage
@@ -22,7 +22,7 @@ or
 ```js
 // create a worker with a
 // function as the source
-var worker = spawn(
+var worker = Spawn(
   function workerThreadSource() {
 
     // it could take time..
@@ -81,7 +81,7 @@ _app.js_
 
 ```js
 // create the worker
-var worker = spawn('fib.js');
+var worker = Spawn('fib.js');
 
 // emit an event and send some data to the worker
 worker.emit('fib', 42, function(result) {
@@ -96,14 +96,22 @@ worker.emit('fib', 42, function(result) {
 
 ## API
 
-#### `spawn(source: {Function|string})`
+#### `Spawn(source: {Function|string} [, config: Object])`
 
 Spawns a new worker from a function or file path. Functions passed as the
 source will be unwrapped and executed in the workers global scope. File paths
 passed as the source will be imported and executed in the workers global scope.
 
+### Config
+
+Option | Default | Description
+------ | ------- | -----------
+workerAs | `spawn` | A workers default Spawn instance name. This can also be set globally at `Spawn.config.workerAs`
+
+Default config
+
 ```js
-var maths = spawn(
+var maths = Spawn(
   function mathsSource() {
 
     // Round a value towards zero
@@ -111,6 +119,26 @@ var maths = spawn(
       send( num > 0 ? Math.floor(num) : Math.ceil(num) );
     });
 
+  }
+);
+```
+
+Your config
+
+```js
+// Could also be set globally with
+// Spawn.config.workerAs = 'mathsWorker'
+
+var maths = Spawn(
+  function mathsSource() {
+
+    // Round a value towards zero
+    mathsWorker.on('fix', function fix(num, send) {
+      send( num > 0 ? Math.floor(num) : Math.ceil(num) );
+    });
+
+  }, {
+    workerAs: 'mathsWorker'
   }
 );
 ```
@@ -128,7 +156,10 @@ var maths = spawn(
     by the emitted event.
 
     ```js
-    spawn(function() {
+    // Emit an event from the worker thread,
+    // listening for the event on the main thread
+
+    Spawn(function() {
 
       spawn.emit('open', 'yap');
 
@@ -137,7 +168,10 @@ var maths = spawn(
       this.close();
     });
 
-    spawn(function() {
+    // Emit and event from the main thread,
+    // listening for the event on the worker thread
+
+    Spawn(function() {
 
       spawn.on('reverse', function(str, send) {
         send( str.split('').reverse().join('') );
@@ -156,7 +190,8 @@ var maths = spawn(
 
   - **`importScripts(script: string [, ...])`**
 
-    Imports one or more scripts into the worker's global scope.
+    Imports one or more scripts into the worker's global scope. `importScripts` supports
+    absolute paths, relative paths, URLs, and object URLs.
 
     _anyhex.js_
     from [Paul Irish](http://www.paulirish.com/2009/random-hex-color-code-snippets/)
@@ -167,8 +202,10 @@ var maths = spawn(
     }
     ```
 
+    _app.js_
+
     ```js
-    spawn(function {
+    Spawn(function {
       // load it
       spawn.importScripts('anyhex.js');
 
@@ -181,7 +218,7 @@ var maths = spawn(
     or
 
     ```js
-    var worker = spawn(function {
+    var worker = Spawn(function {
       spawn.on('anyhex', function(_, send) {
         send( anyHex() );
       });
