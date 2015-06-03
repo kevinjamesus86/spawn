@@ -80,12 +80,12 @@
    *
    * @constructor
    */
-  function Spawn(src, opts) {
+  function Spawn(src, config) {
     if (!(this instanceof Spawn)) {
-      return new Spawn(src, opts);
+      return new Spawn(src, config);
     }
 
-    opts = extend({}, Spawn.config, opts);
+    config = extend({}, Spawn.config, config);
     var file;
     var code = '';
 
@@ -98,7 +98,7 @@
     this.isMainThread = true;
     this.file = createFile(
       'importScripts("' + spawnWorkerURL + '");\n' +
-      'spawn.exportAs("' + opts.workerAs + '");\n' +
+      'spawn.exportAs("' + config.workerAs + '");\n' +
       code
     );
     this.worker = new Worker(this.file);
