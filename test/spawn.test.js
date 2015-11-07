@@ -41,11 +41,17 @@ describe('Spawn', function() {
          *  everrr
          */ $do
          // this
-          ) /** :{ **/ {
+        ) /** :{ **/ {
+
+        // Should leave this alone
+        var url = 'http://some.url/n-path';
 
         // make sure it actually gets this code
         spawn.on('test', function(_, responder) {
-          responder( 'function' === typeof weirdFormatting );
+          responder({
+            isFn: typeof weirdFormatting === 'function',
+            url: url
+          });
         });
 
         // and captures to the very last `}`
@@ -56,8 +62,9 @@ describe('Spawn', function() {
 
     expect(init).not.toThrow();
 
-    worker.emit('test', function(weirdFormattingIsFunction) {
-      expect(weirdFormattingIsFunction).toBe(true);
+    worker.emit('test', function(tests) {
+      expect(tests.isFn).toBe(true);
+      expect(tests.url).toEqual('http://some.url/n-path');
       done();
     });
   });

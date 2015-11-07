@@ -43,8 +43,11 @@
     return dest;
   };
 
-  // RegExp that matches comments
-  var COMMENTS_RE = /((\/\/.*$)|(\/\*[\s\S]*?\*\/))/mg;
+  // RegExp that matches string literals and comments.
+  // When replacing comments we need to make sure that
+  // comment-like character sequences within string literals
+  // are preserved.
+  var COMMENTS_RE = /((['"`])(|[\s\S]*?[^\\])\2)|\/\/.*$|\/\*[\s\S]*?\*\//mg;
 
   // RegExp that matches the outer most function, capturing the body
   var FUNCTION_BODY_RE = /^function\s*[^{]*\{([\s\S]*)\}$/m;
@@ -55,7 +58,7 @@
    * @param {Function} fn
    */
   var getFunctionBody = function(fn) {
-    return fn.toString().replace(COMMENTS_RE, '').replace(FUNCTION_BODY_RE, '$1');
+    return fn.toString().replace(COMMENTS_RE, '$1').replace(FUNCTION_BODY_RE, '$1');
   };
 
   /**
