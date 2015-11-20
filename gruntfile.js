@@ -67,16 +67,18 @@ module.exports = function(grunt) {
   grunt.registerTask('default', ['jshint']);
   grunt.registerTask('dist', ['clean', 'jshint', 'copy', 'uglify']);
 
+  grunt.registerTask('_updatePkgInfo', function() {
+    grunt.config.set('pkg', grunt.file.readJSON('package.json'));
+  });
+
   grunt.registerTask('release', function release(target) {
     target = target ? ':' + target : '';
 
-    grunt.task.run('bump-only' + target);
-    console.log(grunt.file.readJSON('package.json'));
-    grunt.config.merge({
-      pkg: grunt.file.readJSON('package.json')
-    });
-
-    grunt.task.run('dist');
-    grunt.task.run('bump-commit');
+    grunt.task.run([
+      'bump-only' + target,
+      '_updatePkgInfo',
+      'dist',
+      'bump-commit'
+    ]);
   });
 };
