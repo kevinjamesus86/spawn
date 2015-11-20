@@ -4,6 +4,7 @@ module.exports = function(grunt) {
   grunt.loadNpmTasks('grunt-contrib-copy');
   grunt.loadNpmTasks('grunt-contrib-uglify');
   grunt.loadNpmTasks('grunt-contrib-watch');
+  grunt.loadNpmTasks('grunt-bump');
 
   grunt.initConfig({
     pkg: grunt.file.readJSON('package.json'),
@@ -52,9 +53,25 @@ module.exports = function(grunt) {
         files: ['gruntfile.js', 'src/*.js'],
         tasks: ['default']
       }
+    },
+    bump: {
+      options: {
+        commitMessage: 'grunt-bump: Bump version to %VERSION%',
+        tagMessage: 'grunt-bump: Tagging release %VERSION%',
+        commitFiles: ['-a'],
+        pushTo: 'origin'
+      }
     }
   });
 
   grunt.registerTask('default', ['jshint']);
   grunt.registerTask('dist', ['clean', 'jshint', 'copy', 'uglify']);
+
+  grunt.registerTask('release', function release(target) {
+    target = target ? ':' + target : '';
+
+    grunt.task.run('bump-only' + target);
+    grunt.task.run('dist');
+    grunt.task.run('bump-commit');
+  });
 };
