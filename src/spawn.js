@@ -16,9 +16,19 @@
   'use strict';
 
   // keep em close
-  var Worker = window.Worker;
-  var URL = window.URL || window.webkitURL;
+  var win = window;
+  var Worker = win.Worker;
+  var URL = win.URL || win.webkitURL;
   var hasOwn = Object.prototype.hasOwnProperty;
+  var Blob = win.Blob;
+  var BlobBuilder;
+
+  if (!Blob) {
+    BlobBuilder = win.BlobBuilder ||
+                  win.WebKitBlobBuilder ||
+                  win.MozBlobBuilder ||
+                  win.MSBlobBuilder;
+  }
 
   /**
    * Shallow copy all of the properties from the `source` objects
@@ -68,9 +78,20 @@
    * @return {string} objectURL
    */
   var createFile = function(source) {
-    return URL.createObjectURL(new Blob([source], {
-      type: 'application/javascript'
-    }));
+    var type = 'application/javascript';
+    var blob;
+
+    if (Blob) {
+      blob = new Blob([source], {
+        type: type
+      });
+    } else {
+      blob = new BlobBuilder();
+      blob.append(source);
+      blob = blob.getBlob(type);
+    }
+
+    return URL.createObjectURL(blob);
   };
 
   /** @const */
