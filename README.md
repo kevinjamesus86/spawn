@@ -4,15 +4,15 @@ _event-driven web workers for modern browsers_
 ### Download
 
 + JS
- - [spawn.js](https://raw.githubusercontent.com/kevinjamesus86/spawn/v1.0.0/dist/spawn.js) big, or
- - [spawn.min.js](https://raw.githubusercontent.com/kevinjamesus86/spawn/v1.0.0/dist/spawn.min.js) small
+ - [spawn.js](https://raw.githubusercontent.com/kevinjamesus86/spawn/v1.0.2/dist/spawn.js) big, or
+ - [spawn.min.js](https://raw.githubusercontent.com/kevinjamesus86/spawn/v1.0.2/dist/spawn.min.js) small
 
 ## Install
 
 ```html
-<script src="https://cdn.rawgit.com/kevinjamesus86/spawn/v1.0.0/dist/spawn.js"></script>
+<script src="https://cdn.rawgit.com/kevinjamesus86/spawn/v1.0.2/dist/spawn.js"></script>
 or
-<script src="https://cdn.rawgit.com/kevinjamesus86/spawn/v1.0.0/dist/spawn.min.js"></script>
+<script src="https://cdn.rawgit.com/kevinjamesus86/spawn/v1.0.2/dist/spawn.min.js"></script>
 ```
 
 ## Usage
