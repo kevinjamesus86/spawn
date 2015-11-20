@@ -1,6 +1,6 @@
 /**
  * spawn! event-driven web workers for modern browsers
- * @version v1.0.7-2 - 2015-11-19
+ * @version v1.1.0 - 2015-11-19
  * @author Kevin James <kevinjamesus86@gmail.com>
  * Copyright (c) 2015 Kevin James
  * Licensed under the MIT license.
