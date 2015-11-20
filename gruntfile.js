@@ -71,6 +71,9 @@ module.exports = function(grunt) {
     target = target ? ':' + target : '';
 
     grunt.task.run('bump-only' + target);
+
+    grunt.config.set('pkg', grunt.file.readJSON('package.json'));
+
     grunt.task.run('dist');
     grunt.task.run('bump-commit');
   });
