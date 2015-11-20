@@ -72,7 +72,9 @@ module.exports = function(grunt) {
 
     grunt.task.run('bump-only' + target);
 
-    grunt.config.set('pkg', grunt.file.readJSON('package.json'));
+    grunt.config.merge({
+      pkg: grunt.file.readJSON('package.json')
+    });
 
     grunt.task.run('dist');
     grunt.task.run('bump-commit');
